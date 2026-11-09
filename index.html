@@ -1,0 +1,1401 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>FIRE Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #eef3ec;
+        --surface: #ffffff;
+        --surface-2: #f4f8f2;
+        --ink: #1d2b21;
+        --muted: #5d7163;
+        --line: #d7e2d2;
+        --accent: #1e6b41;
+        --accent-ink: #ffffff;
+        --accent-soft: #e2efe4;
+        --gold: #b9821e;
+        --gold-bright: #d9a441;
+        --blue: #3f74b5;
+        --green: #37945e;
+        --red: #b23c31;
+        --chip-off: #eef2ec;
+        --input-bg: #fbfdfb;
+        --shadow: 0 1px 3px rgba(24, 48, 30, 0.08), 0 6px 18px rgba(24, 48, 30, 0.05);
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0e1a12;
+          --surface: #16241a;
+          --surface-2: #1b2d20;
+          --ink: #e9f2e7;
+          --muted: #9db3a1;
+          --line: #2b4231;
+          --accent: #3fae6d;
+          --accent-ink: #0c1a10;
+          --accent-soft: #1d3524;
+          --gold: #d9a441;
+          --gold-bright: #e3b355;
+          --blue: #6ea3dd;
+          --green: #55bb7f;
+          --red: #e07a6d;
+          --chip-off: #1d2f22;
+          --input-bg: #122016;
+          --shadow: 0 1px 3px rgba(0, 0, 0, 0.4), 0 6px 18px rgba(0, 0, 0, 0.25);
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        font-family: "Ubuntu", system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        line-height: 1.45;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 20px 16px 40px; }
+
+      header.top {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 16px; margin-bottom: 18px; flex-wrap: wrap;
+      }
+      header.top h1 { font-size: 28px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+      header.top p { margin: 4px 0 0; color: var(--muted); font-size: 15px; max-width: 560px; }
+      .top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .demo-badge {
+        display: none; font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+        text-transform: uppercase; color: var(--gold); border: 1px solid var(--gold);
+        padding: 4px 10px; border-radius: 999px;
+      }
+      .demo-badge.on { display: inline-block; }
+
+      .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+      .card {
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        box-shadow: var(--shadow); padding: 18px; display: flex; flex-direction: column;
+        min-width: 0; height: 100%;
+      }
+      .span-5 { grid-column: span 5; }
+      .span-6 { grid-column: span 6; }
+      .span-7 { grid-column: span 7; }
+      .span-12 { grid-column: span 12; }
+      @media (max-width: 900px) {
+        .span-5, .span-6, .span-7 { grid-column: span 12; }
+      }
+      .card h2 { font-size: 17px; font-weight: 700; margin: 0 0 4px; }
+      .card .sub { color: var(--muted); font-size: 13.5px; margin: 0 0 12px; }
+      .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+
+      .big-number { font-size: 40px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin: 2px 0 2px; }
+      .big-label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500; }
+      .stat-rows { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+      .stat-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; }
+      .stat-row .k { color: var(--muted); display: flex; align-items: center; gap: 8px; }
+      .stat-row .v { font-weight: 500; font-variant-numeric: tabular-nums; }
+      .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+      .progress-track { height: 10px; background: var(--chip-off); border-radius: 999px; overflow: hidden; margin-top: 6px; }
+      .progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s ease; }
+      .summary-foot { margin-top: auto; padding-top: 16px; }
+      .fi-line { font-size: 15px; }
+      .fi-line strong { color: var(--accent); }
+
+      button {
+        font: inherit; cursor: pointer; border-radius: 9px; border: 1px solid var(--line);
+        background: var(--surface-2); color: var(--ink); padding: 8px 14px; font-size: 14px; font-weight: 500;
+      }
+      button:hover { border-color: var(--accent); }
+      button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+      button.primary:hover { filter: brightness(1.08); }
+      button.danger { color: var(--red); }
+      button.danger:hover { border-color: var(--red); }
+      button.icon-btn { padding: 7px 10px; display: inline-flex; align-items: center; gap: 6px; }
+      button.small { padding: 5px 10px; font-size: 13px; }
+      button:disabled { opacity: 0.45; cursor: default; }
+      button:disabled:hover { border-color: var(--line); filter: none; }
+
+      input, select {
+        font: inherit; color: var(--ink); background: var(--input-bg);
+        border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; font-size: 14.5px;
+        min-width: 0;
+      }
+      input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: var(--accent); }
+      input[type="number"] { font-variant-numeric: tabular-nums; }
+      label.f { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--muted); font-weight: 500; }
+      label.f input, label.f select { color: var(--ink); font-size: 15px; }
+      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } }
+      .settings-foot { margin-top: auto; padding-top: 14px; color: var(--muted); font-size: 13.5px; }
+
+      .donut-flex { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+      .donut-box { position: relative; width: 190px; height: 190px; flex: none; margin: 0 auto; }
+      .donut-center {
+        position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; text-align: center; pointer-events: none; padding: 0 34px;
+      }
+      .donut-center .dc-v { font-size: 19px; font-weight: 700; line-height: 1.15; }
+      .donut-center .dc-k { font-size: 12px; color: var(--muted); margin-top: 2px; }
+      .legend { flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px; min-width: 200px; }
+      .legend-row {
+        display: flex; align-items: center; gap: 9px; font-size: 14.5px; padding: 5px 8px;
+        border-radius: 8px; cursor: default;
+      }
+      .legend-row.hot { background: var(--surface-2); }
+      .legend-row .nm { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .legend-row .amt { font-variant-numeric: tabular-nums; font-weight: 500; }
+      .legend-row .pct { color: var(--muted); font-variant-numeric: tabular-nums; width: 52px; text-align: right; }
+      .donut-wrap { margin-top: auto; }
+
+      .chart-wrap { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+      .chart-wrap svg { width: 100%; height: auto; display: block; }
+      .chart-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13.5px; color: var(--muted); margin-bottom: 8px; }
+      .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+      .swatch { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+      .tooltip {
+        position: absolute; pointer-events: none; background: var(--ink); color: var(--bg);
+        border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.5;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.12s ease;
+        max-width: 270px; z-index: 5; white-space: nowrap;
+      }
+      .tooltip .tt-title { font-weight: 700; margin-bottom: 3px; }
+      .tooltip .tt-row { display: flex; justify-content: space-between; gap: 18px; }
+      .tooltip .tt-row .tv { font-weight: 500; font-variant-numeric: tabular-nums; }
+      .empty-note { color: var(--muted); font-size: 14.5px; text-align: center; padding: 28px 12px; }
+      .axis text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+      .gridline { stroke: var(--line); stroke-width: 1; }
+
+      .chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+      .chip {
+        display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 500;
+        padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line);
+        background: var(--chip-off); color: var(--muted); cursor: pointer; user-select: none;
+      }
+      .chip.on { background: var(--surface); color: var(--ink); border-color: var(--ink); }
+      .chip .dot { width: 9px; height: 9px; }
+
+      .entries { display: flex; flex-direction: column; }
+      .entry-row {
+        display: flex; align-items: center; gap: 9px; padding: 8px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .entry-row:last-child { border-bottom: none; }
+      .entry-row .nm-input { flex: 1; border-color: transparent; background: transparent; font-weight: 500; padding: 6px 8px; }
+      .entry-row .nm-input:hover, .entry-row .nm-input:focus { border-color: var(--line); background: var(--input-bg); }
+      .entry-row .bal-input { width: 128px; text-align: right; }
+      .entry-row .del {
+        border: none; background: transparent; color: var(--muted); font-size: 18px; line-height: 1;
+        padding: 4px 7px; border-radius: 7px;
+      }
+      .entry-row .del:hover { color: var(--red); border: none; background: var(--surface-2); }
+      .group-total { display: flex; justify-content: space-between; font-size: 15px; padding: 10px 0 2px; }
+      .group-total .v { font-weight: 700; font-variant-numeric: tabular-nums; }
+      .add-form { display: flex; gap: 8px; margin-top: auto; padding-top: 14px; flex-wrap: wrap; }
+      .add-form .nm { flex: 1 1 130px; }
+      .add-form .amt { flex: 0 1 130px; }
+
+      .slider-row { margin-bottom: 16px; }
+      .slider-row .sr-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 14.5px; margin-bottom: 6px; }
+      .slider-row .sr-head .sv { font-weight: 700; font-variant-numeric: tabular-nums; }
+      input[type="range"] { width: 100%; accent-color: var(--accent); padding: 0; border: none; background: transparent; }
+      input[type="range"]:focus { outline: none; }
+      .scenario-result { margin-top: auto; background: var(--accent-soft); border-radius: 10px; padding: 13px 15px; }
+      .scenario-result .sr-big { font-size: 19px; font-weight: 700; }
+      .scenario-result .sr-delta { font-size: 14px; color: var(--muted); margin-top: 2px; }
+
+      .log-list { display: flex; flex-direction: column; overflow-y: auto; max-height: 300px; }
+      .log-row { display: flex; align-items: baseline; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+      .log-row:last-child { border-bottom: none; }
+      .log-row .dt { color: var(--muted); flex: none; width: 96px; }
+      .log-row .tt { font-weight: 500; font-variant-numeric: tabular-nums; }
+      .log-row .chg { font-variant-numeric: tabular-nums; font-size: 13.5px; }
+      .chg.up { color: var(--green); }
+      .chg.down { color: var(--red); }
+      .log-row .del { margin-left: auto; border: none; background: transparent; color: var(--muted); font-size: 16px; padding: 2px 6px; }
+      .log-row .del:hover { color: var(--red); border: none; }
+      .log-form { border-top: 1px solid var(--line); margin-top: auto; padding-top: 14px; }
+      .log-form h3 { font-size: 14.5px; margin: 0 0 10px; }
+      .log-fields { display: flex; flex-direction: column; gap: 8px; max-height: 210px; overflow-y: auto; }
+      .log-field { display: flex; align-items: center; gap: 9px; font-size: 14.5px; }
+      .log-field .nm { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .log-field input { width: 128px; text-align: right; }
+      .log-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
+      .log-actions input[type="date"] { flex: 0 1 auto; }
+
+      .data-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+      .data-note { color: var(--muted); font-size: 13.5px; margin-top: 12px; }
+      .msg { font-size: 14px; margin-top: 10px; min-height: 20px; }
+      .msg.ok { color: var(--accent); font-weight: 500; }
+      .msg.err { color: var(--red); font-weight: 500; }
+
+      .modal-back {
+        position: fixed; inset: 0; background: rgba(8, 16, 10, 0.55); display: none;
+        align-items: center; justify-content: center; padding: 18px; z-index: 50;
+      }
+      .modal-back.open { display: flex; }
+      .modal {
+        background: var(--surface); color: var(--ink); border-radius: var(--radius);
+        max-width: 430px; width: 100%; padding: 22px; box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+      }
+      .modal h3 { margin: 0 0 8px; font-size: 18px; }
+      .modal p { color: var(--muted); font-size: 14.5px; margin: 0 0 18px; }
+      .modal .m-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .progress-fill, .tooltip { transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div>
+          <h1>FIRE Tracker</h1>
+          <p>Track your net worth, log your balances, and see when your investments can carry you to financial independence.</p>
+        </div>
+        <div class="top-actions">
+          <span class="demo-badge" id="demoBadge">Demo data</span>
+          <button class="icon-btn" id="privacyBtn" type="button" aria-pressed="false" title="Hide amounts">
+            <svg id="privacyIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span id="privacyLabel">Hide amounts</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="grid">
+        <!-- Summary -->
+        <section class="card span-7" aria-label="Summary">
+          <div class="big-label">Net worth</div>
+          <div class="big-number" id="sumNetWorth">$0</div>
+          <div class="progress-track" role="img" aria-label="Progress toward your FI goal">
+            <div class="progress-fill" id="sumProgress" style="width: 0%"></div>
+          </div>
+          <div class="stat-rows">
+            <div class="stat-row"><span class="k"><span class="dot" style="background: var(--green)"></span>Investments</span><span class="v" id="sumInvest">$0</span></div>
+            <div class="stat-row"><span class="k"><span class="dot" style="background: var(--gold-bright)"></span>Cash &amp; equivalents</span><span class="v" id="sumCash">$0</span></div>
+            <div class="stat-row"><span class="k">FI goal</span><span class="v" id="sumGoal">$0</span></div>
+            <div class="stat-row"><span class="k">Progress to goal</span><span class="v" id="sumPct">0%</span></div>
+          </div>
+          <div class="summary-foot">
+            <div class="fi-line" id="sumFiLine">Add your accounts below to see your projected FI date.</div>
+          </div>
+        </section>
+
+        <!-- Portfolio composition -->
+        <section class="card span-5" aria-label="Portfolio composition">
+          <h2>Portfolio composition</h2>
+          <p class="sub">Every account and asset, by share of net worth.</p>
+          <div class="donut-wrap">
+            <div class="donut-flex" id="donutFlex">
+              <div class="donut-box">
+                <svg id="donutSvg" width="190" height="190" viewBox="0 0 190 190" role="img" aria-label="Donut chart of portfolio composition"></svg>
+                <div class="donut-center"><div class="dc-v" id="donutCenterV">$0</div><div class="dc-k" id="donutCenterK">Net worth</div></div>
+              </div>
+              <div class="legend" id="donutLegend"></div>
+            </div>
+            <div class="empty-note" id="donutEmpty" style="display:none">Nothing here yet — add an investment or a cash &amp; equivalents entry below and it will show up in the mix.</div>
+          </div>
+        </section>
+
+        <!-- Road to FI -->
+        <section class="card span-7" aria-label="Projection chart">
+          <div class="card-head">
+            <div>
+              <h2 id="roadTitle">Road to FI</h2>
+              <p class="sub">Projected growth vs. your logged balances. Only Investments compound — cash &amp; equivalents are held flat.</p>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <span><span class="swatch" style="background: var(--blue)"></span>You invested</span>
+            <span><span class="swatch" style="background: var(--green)"></span>Interest earned</span>
+            <span><span class="swatch" style="background: var(--gold-bright)"></span>Actual net worth</span>
+          </div>
+          <div class="chart-wrap" id="roadWrap">
+            <div id="roadChart"></div>
+            <div class="empty-note" id="roadEmpty" style="display:none">Add at least one entry with a balance and set your plan below — the projection draws itself from there.</div>
+            <div class="tooltip" id="roadTip"></div>
+          </div>
+        </section>
+
+        <!-- Scenarios -->
+        <section class="card span-5" aria-label="Scenarios">
+          <h2>Scenarios</h2>
+          <p class="sub">Play with the levers — this doesn't change your saved plan.</p>
+          <div class="slider-row">
+            <div class="sr-head"><span>Monthly contribution</span><span class="sv" id="scMonthlyV"></span></div>
+            <input type="range" id="scMonthly" min="0" max="10000" step="50" />
+          </div>
+          <div class="slider-row">
+            <div class="sr-head"><span>Annual return</span><span class="sv" id="scReturnV"></span></div>
+            <input type="range" id="scReturn" min="0" max="12" step="0.25" />
+          </div>
+          <div class="slider-row">
+            <div class="sr-head"><span>FI goal</span><span class="sv" id="scGoalV"></span></div>
+            <input type="range" id="scGoal" min="100000" max="5000000" step="25000" />
+          </div>
+          <div class="scenario-result" id="scenarioResult"></div>
+        </section>
+
+        <!-- Investments -->
+        <section class="card span-6" aria-label="Investments">
+          <h2>Investments</h2>
+          <p class="sub">Accounts that compound at your plan's return rate.</p>
+          <div class="entries" id="investList"></div>
+          <div class="group-total"><span>Total investments</span><span class="v" id="investTotal">$0</span></div>
+          <form class="add-form" id="investForm">
+            <input class="nm" type="text" id="investName" placeholder="New account — e.g. TFSA" maxlength="60" autocomplete="off" />
+            <input class="amt" type="number" id="investAmt" placeholder="Balance" min="0" step="any" />
+            <button class="primary" type="submit">Add</button>
+          </form>
+        </section>
+
+        <!-- Cash and equivalents -->
+        <section class="card span-6" aria-label="Cash and equivalents">
+          <h2>Cash &amp; equivalents</h2>
+          <p class="sub">Cash, house equity, vehicles — counted in net worth, held flat in the projection.</p>
+          <div class="entries" id="cashList"></div>
+          <div class="group-total"><span>Total cash &amp; equivalents</span><span class="v" id="cashTotal">$0</span></div>
+          <form class="add-form" id="cashForm">
+            <input class="nm" type="text" id="cashName" placeholder="New entry — e.g. House equity" maxlength="60" autocomplete="off" />
+            <input class="amt" type="number" id="cashAmt" placeholder="Value" min="0" step="any" />
+            <button class="primary" type="submit">Add</button>
+          </form>
+        </section>
+
+        <!-- Balance history -->
+        <section class="card span-7" aria-label="Balance history chart">
+          <h2>Balance history</h2>
+          <p class="sub">Your logged balances on their own scale. Tap a chip to add or remove a line.</p>
+          <div class="chips" id="histChips"></div>
+          <div class="chart-wrap" id="histWrap">
+            <div id="histChart"></div>
+            <div class="empty-note" id="histEmpty">No balances logged yet. Log your first balance in the Balance log and your history starts here.</div>
+            <div class="tooltip" id="histTip"></div>
+          </div>
+        </section>
+
+        <!-- Balance log -->
+        <section class="card span-5" aria-label="Balance log">
+          <h2>Balance log</h2>
+          <p class="sub">A dated snapshot of every entry's balance.</p>
+          <div class="log-list" id="logList"></div>
+          <div class="log-form" id="logFormWrap">
+            <h3>Log balances</h3>
+            <div class="log-fields" id="logFields"></div>
+            <div class="log-actions">
+              <input type="date" id="logDate" aria-label="Log date" />
+              <button class="primary" type="button" id="logSave">Save log entry</button>
+            </div>
+            <div class="msg" id="logMsg" role="status"></div>
+          </div>
+        </section>
+
+        <!-- Plan settings -->
+        <section class="card span-6" aria-label="Plan settings">
+          <h2>Plan settings</h2>
+          <p class="sub">The assumptions behind the projection. Saved automatically.</p>
+          <div class="form-grid">
+            <label class="f">FI goal
+              <input type="number" id="setGoal" min="0" step="any" />
+            </label>
+            <label class="f">Monthly contribution
+              <input type="number" id="setMonthly" min="0" step="any" />
+            </label>
+            <label class="f">Expected annual return (%)
+              <input type="number" id="setReturn" min="0" max="30" step="any" />
+            </label>
+            <label class="f">Currency
+              <select id="setCurrency">
+                <option value="USD">USD — US dollar</option>
+                <option value="CAD">CAD — Canadian dollar</option>
+                <option value="EUR">EUR — Euro</option>
+                <option value="GBP">GBP — British pound</option>
+                <option value="AUD">AUD — Australian dollar</option>
+                <option value="JPY">JPY — Japanese yen</option>
+                <option value="CHF">CHF — Swiss franc</option>
+                <option value="INR">INR — Indian rupee</option>
+              </select>
+            </label>
+          </div>
+          <div class="settings-foot" id="settingsFoot"></div>
+        </section>
+
+        <!-- Your data -->
+        <section class="card span-6" aria-label="Your data">
+          <h2>Your data</h2>
+          <p class="sub">Everything is stored in this browser's local storage — nothing leaves your device.</p>
+          <div class="data-actions">
+            <button type="button" id="exportBtn">Export backup (JSON)</button>
+            <button type="button" id="importBtn">Import backup</button>
+            <input type="file" id="importFile" accept="application/json,.json" style="display:none" />
+            <button type="button" id="demoBtn">Load demo data</button>
+            <button type="button" class="danger" id="eraseBtn">Erase everything</button>
+          </div>
+          <div class="msg" id="dataMsg" role="status"></div>
+          <p class="data-note">Export a backup before switching browsers or clearing site data — local storage doesn't follow you. To host this tracker yourself, save this page as a single HTML file (for example as <em>index.html</em> in a GitHub repo with GitHub Pages turned on) and it runs as-is.</p>
+        </section>
+      </div>
+    </div>
+
+    <!-- Confirm modal -->
+    <div class="modal-back" id="modalBack">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <h3 id="modalTitle">Are you sure?</h3>
+        <p id="modalBody"></p>
+        <div class="m-actions">
+          <button type="button" id="modalCancel">Cancel</button>
+          <button type="button" class="primary" id="modalOk">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      "use strict";
+
+      /* ---------------- State ---------------- */
+      var LS_KEY = "fire-tracker-static:v1";
+      var PALETTE = ["#4f83cc", "#37a06b", "#d9a441", "#c65d7b", "#7d6bc4", "#3aa6a0", "#d97b3f", "#8a9a5b", "#5b8dd9", "#b0524d", "#6b9e78", "#a67dc6"];
+
+      function defaultState() {
+        return {
+          settings: { goal: 1000000, monthly: 500, annualReturn: 7, currency: "USD" },
+          entries: [],
+          snapshots: [],
+          demo: false
+        };
+      }
+      function loadState() {
+        try {
+          var raw = localStorage.getItem(LS_KEY);
+          if (!raw) return defaultState();
+          var s = JSON.parse(raw);
+          if (!s || typeof s !== "object" || !s.settings || !Array.isArray(s.entries) || !Array.isArray(s.snapshots)) return defaultState();
+          return s;
+        } catch (e) { return defaultState(); }
+      }
+      var state = loadState();
+      var privacy = false;               // session-only UI state
+      var histVisible = { total: true }; // only Total on by default
+      var scenarioTouched = false;
+
+      function save() {
+        try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) { /* storage full/blocked */ }
+      }
+      function uid() { return "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+      /* ---------------- Formatting ---------------- */
+      function fmt(n) {
+        if (privacy) return "••••••";
+        try {
+          return new Intl.NumberFormat(undefined, { style: "currency", currency: state.settings.currency || "USD", maximumFractionDigits: 0 }).format(n || 0);
+        } catch (e) {
+          return "$" + Math.round(n || 0).toLocaleString();
+        }
+      }
+      function fmtSigned(n) {
+        if (privacy) return "••••••";
+        var s = fmt(Math.abs(n));
+        return (n > 0 ? "+" : n < 0 ? "−" : "") + s;
+      }
+      function fmtCompact(n) {
+        if (privacy) return "•••";
+        var a = Math.abs(n);
+        var cur = "";
+        try { cur = new Intl.NumberFormat(undefined, { style: "currency", currency: state.settings.currency || "USD", maximumFractionDigits: 0 }).format(0).replace(/[\d.,\s]/g, ""); } catch (e) { cur = "$"; }
+        if (a >= 1e6) return cur + (n / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, "") + "M";
+        if (a >= 1e3) return cur + Math.round(n / 1e3) + "k";
+        return cur + Math.round(n);
+      }
+      function fmtPct(x) { return (x * 100).toFixed(x >= 0.995 ? 0 : 1).replace(/\.0$/, "") + "%"; }
+      function monthName(d) { return d.toLocaleDateString(undefined, { month: "short", year: "numeric" }); }
+      function fullDate(iso) {
+        var d = parseISO(iso);
+        return d ? d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : iso;
+      }
+      function parseISO(iso) {
+        if (!iso) return null;
+        var p = iso.split("-");
+        if (p.length !== 3) return null;
+        return new Date(+p[0], +p[1] - 1, +p[2]);
+      }
+      function toISO(d) {
+        var m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
+        return d.getFullYear() + "-" + m + "-" + day;
+      }
+      function todayISO() { return toISO(new Date()); }
+      function monthsFloat(base, d) {
+        return (d.getFullYear() - base.getFullYear()) * 12 + (d.getMonth() - base.getMonth()) + (d.getDate() - base.getDate()) / 30.44;
+      }
+      function addMonths(d, n) { return new Date(d.getFullYear(), d.getMonth() + n, 1); }
+      function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+        });
+      }
+      function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+
+      /* ---------------- Model helpers ---------------- */
+      function totals() {
+        var inv = 0, cash = 0;
+        state.entries.forEach(function (e) { if (e.group === "invest") inv += e.balance; else cash += e.balance; });
+        return { invest: inv, cash: cash, total: inv + cash };
+      }
+      function sortedSnapshots() {
+        return state.snapshots.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+      }
+      function snapshotGroups(snap) {
+        var inv = 0, cash = 0;
+        (snap.entries || []).forEach(function (se) { if (se.group === "invest") inv += se.balance; else cash += se.balance; });
+        return { invest: inv, cash: cash };
+      }
+      function nextColor() {
+        var used = {};
+        state.entries.forEach(function (e) { used[e.color] = true; });
+        for (var i = 0; i < PALETTE.length; i++) if (!used[PALETTE[i]]) return PALETTE[i];
+        return PALETTE[state.entries.length % PALETTE.length];
+      }
+      function entryById(id) {
+        for (var i = 0; i < state.entries.length; i++) if (state.entries[i].id === id) return state.entries[i];
+        return null;
+      }
+      function entryColor(id, fallbackName) {
+        var e = entryById(id);
+        if (e) return e.color;
+        // deleted entry: stable color from its snapshot record order
+        return "#999999";
+      }
+
+      /* Projection: monthly compounding on Investments only; cash held flat.
+         Returns points [{m, total, invested, inv}] and fiMonth (null if not reached). */
+      function project(invStart, cashStart, monthly, annualPct, goal, maxMonths) {
+        var r = (annualPct || 0) / 100 / 12;
+        var cap = maxMonths || 600;
+        var inv = invStart, invested = invStart + cashStart;
+        var pts = [{ m: 0, total: inv + cashStart, invested: invested, inv: inv }];
+        var fi = (inv + cashStart >= goal && goal > 0) ? 0 : null;
+        for (var m = 1; m <= cap; m++) {
+          inv = inv * (1 + r) + monthly;
+          invested += monthly;
+          var total = inv + cashStart;
+          pts.push({ m: m, total: total, invested: invested, inv: inv });
+          if (fi === null && goal > 0 && total >= goal) { fi = m; break; }
+        }
+        return { points: pts, fiMonth: fi };
+      }
+      function durationText(months) {
+        if (months === null || months === undefined) return "not within 50 years";
+        if (months <= 0) return "already there";
+        var y = Math.floor(months / 12), mo = months % 12;
+        var parts = [];
+        if (y) parts.push(y + (y === 1 ? " year" : " years"));
+        if (mo) parts.push(mo + (mo === 1 ? " month" : " months"));
+        return parts.join(", ") || "this month";
+      }
+
+      /* ---------------- DOM refs ---------------- */
+      function $(id) { return document.getElementById(id); }
+      var els = {
+        demoBadge: $("demoBadge"), privacyBtn: $("privacyBtn"), privacyLabel: $("privacyLabel"),
+        sumNetWorth: $("sumNetWorth"), sumInvest: $("sumInvest"), sumCash: $("sumCash"),
+        sumGoal: $("sumGoal"), sumPct: $("sumPct"), sumProgress: $("sumProgress"), sumFiLine: $("sumFiLine"),
+        donutSvg: $("donutSvg"), donutLegend: $("donutLegend"), donutEmpty: $("donutEmpty"), donutFlex: $("donutFlex"),
+        donutCenterV: $("donutCenterV"), donutCenterK: $("donutCenterK"),
+        roadTitle: $("roadTitle"), roadChart: $("roadChart"), roadEmpty: $("roadEmpty"), roadTip: $("roadTip"), roadWrap: $("roadWrap"),
+        scMonthly: $("scMonthly"), scReturn: $("scReturn"), scGoal: $("scGoal"),
+        scMonthlyV: $("scMonthlyV"), scReturnV: $("scReturnV"), scGoalV: $("scGoalV"), scenarioResult: $("scenarioResult"),
+        investList: $("investList"), cashList: $("cashList"), investTotal: $("investTotal"), cashTotal: $("cashTotal"),
+        histChips: $("histChips"), histChart: $("histChart"), histEmpty: $("histEmpty"), histTip: $("histTip"), histWrap: $("histWrap"),
+        logList: $("logList"), logFields: $("logFields"), logDate: $("logDate"), logSave: $("logSave"), logMsg: $("logMsg"),
+        setGoal: $("setGoal"), setMonthly: $("setMonthly"), setReturn: $("setReturn"), setCurrency: $("setCurrency"),
+        settingsFoot: $("settingsFoot"), dataMsg: $("dataMsg"),
+        modalBack: $("modalBack"), modalTitle: $("modalTitle"), modalBody: $("modalBody"),
+        modalOk: $("modalOk"), modalCancel: $("modalCancel")
+      };
+
+      /* ---------------- Confirm modal ---------------- */
+      var modalCb = null;
+      function confirmModal(title, body, okLabel, cb) {
+        els.modalTitle.textContent = title;
+        els.modalBody.textContent = body;
+        els.modalOk.textContent = okLabel || "Continue";
+        modalCb = cb;
+        els.modalBack.classList.add("open");
+      }
+      els.modalCancel.addEventListener("click", function () { els.modalBack.classList.remove("open"); modalCb = null; });
+      els.modalOk.addEventListener("click", function () {
+        els.modalBack.classList.remove("open");
+        var cb = modalCb; modalCb = null;
+        if (cb) cb();
+      });
+      els.modalBack.addEventListener("click", function (e) { if (e.target === els.modalBack) { els.modalBack.classList.remove("open"); modalCb = null; } });
+
+      /* ---------------- Summary ---------------- */
+      function currentPlanProjection() {
+        var t = totals();
+        var snaps = sortedSnapshots();
+        var base = t, baseDate = new Date();
+        if (snaps.length) {
+          var last = snaps[snaps.length - 1];
+          var g = snapshotGroups(last);
+          base = { invest: g.invest, cash: g.cash, total: last.total };
+          baseDate = parseISO(last.date) || new Date();
+        }
+        var p = project(base.invest, base.cash, state.settings.monthly, state.settings.annualReturn, state.settings.goal, 600);
+        return { proj: p, base: base, baseDate: baseDate };
+      }
+      function renderSummary() {
+        var t = totals();
+        var goal = state.settings.goal;
+        els.sumNetWorth.textContent = fmt(t.total);
+        els.sumInvest.textContent = fmt(t.invest);
+        els.sumCash.textContent = fmt(t.cash);
+        els.sumGoal.textContent = fmt(goal);
+        var pct = goal > 0 ? t.total / goal : 0;
+        els.sumPct.textContent = fmtPct(Math.min(pct, 9.99));
+        els.sumProgress.style.width = Math.max(0, Math.min(100, pct * 100)) + "%";
+        if (!state.entries.length) {
+          els.sumFiLine.textContent = "Add your accounts below to see your projected FI date.";
+          return;
+        }
+        var cp = currentPlanProjection();
+        if (cp.proj.fiMonth === null) {
+          els.sumFiLine.innerHTML = "At <strong>" + esc(fmt(state.settings.monthly)) + "/month</strong> and <strong>" + esc(String(state.settings.annualReturn)) + "%</strong>, the goal isn't reached within 50 years — try the Scenarios card to see what would move it.";
+        } else if (cp.proj.fiMonth === 0) {
+          els.sumFiLine.innerHTML = "You've reached your FI goal of <strong>" + esc(fmt(goal)) + "</strong>. 🎉";
+        } else {
+          var fiDate = addMonths(cp.baseDate, cp.proj.fiMonth);
+          els.sumFiLine.innerHTML = "On this plan you reach <strong>" + esc(fmt(goal)) + "</strong> in <strong>" + esc(monthName(fiDate)) + "</strong> — " + esc(durationText(cp.proj.fiMonth)) + " from your last logged balance.";
+        }
+      }
+
+      /* ---------------- Donut ---------------- */
+      var donutHoverId = null;
+      function renderDonut() {
+        var t = totals();
+        var items = state.entries.filter(function (e) { return e.balance > 0; })
+          .slice().sort(function (a, b) { return b.balance - a.balance; });
+        if (!items.length || t.total <= 0) {
+          els.donutSvg.innerHTML = '<circle cx="95" cy="95" r="70" fill="none" stroke="var(--line)" stroke-width="26"/>';
+          els.donutLegend.innerHTML = "";
+          els.donutEmpty.style.display = "block";
+          els.donutFlex.style.display = "none";
+          els.donutCenterV.textContent = fmt(0);
+          els.donutCenterK.textContent = "Net worth";
+          return;
+        }
+        els.donutEmpty.style.display = "none";
+        els.donutFlex.style.display = "flex";
+        var cx = 95, cy = 95, rO = 82, rI = 56;
+        function pt(r, ang) { return [cx + r * Math.cos(ang), cy + r * Math.sin(ang)]; }
+        var a0 = -Math.PI / 2, svg = "";
+        items.forEach(function (e) {
+          var frac = e.balance / t.total;
+          var a1 = a0 + frac * Math.PI * 2;
+          var large = (a1 - a0) > Math.PI ? 1 : 0;
+          var o0 = pt(rO, a0), o1 = pt(rO, a1), i1 = pt(rI, a1), i0 = pt(rI, a0);
+          var d;
+          if (items.length === 1) {
+            var am = a0 + Math.PI;
+            var om = pt(rO, am), im = pt(rI, am);
+            d = "M " + o0[0] + " " + o0[1] + " A " + rO + " " + rO + " 0 0 1 " + om[0] + " " + om[1] +
+                " A " + rO + " " + rO + " 0 0 1 " + o1[0] + " " + o1[1] +
+                " L " + i1[0] + " " + i1[1] +
+                " A " + rI + " " + rI + " 0 0 0 " + im[0] + " " + im[1] +
+                " A " + rI + " " + rI + " 0 0 0 " + i0[0] + " " + i0[1] + " Z";
+          } else {
+            d = "M " + o0[0] + " " + o0[1] + " A " + rO + " " + rO + " 0 " + large + " 1 " + o1[0] + " " + o1[1] +
+                " L " + i1[0] + " " + i1[1] + " A " + rI + " " + rI + " 0 " + large + " 0 " + i0[0] + " " + i0[1] + " Z";
+          }
+          var hot = donutHoverId === e.id;
+          svg += '<path d="' + d + '" fill="' + e.color + '" data-donut="' + e.id + '" style="cursor:pointer;transition:opacity .15s ease' + (hot ? "" : "") + '" opacity="' + (donutHoverId && !hot ? "0.35" : "1") + '"><title>' + esc(e.name) + '</title></path>';
+          a0 = a1;
+        });
+        els.donutSvg.innerHTML = svg;
+        var leg = "";
+        items.forEach(function (e) {
+          leg += '<div class="legend-row' + (donutHoverId === e.id ? " hot" : "") + '" data-donut="' + e.id + '">' +
+            '<span class="dot" style="background:' + e.color + '"></span>' +
+            '<span class="nm">' + esc(e.name) + '</span>' +
+            '<span class="amt">' + esc(fmt(e.balance)) + '</span>' +
+            '<span class="pct">' + esc(fmtPct(e.balance / t.total)) + '</span></div>';
+        });
+        els.donutLegend.innerHTML = leg;
+        var hov = donutHoverId ? entryById(donutHoverId) : null;
+        if (hov) {
+          els.donutCenterV.textContent = fmt(hov.balance);
+          els.donutCenterK.textContent = hov.name + " · " + fmtPct(hov.balance / t.total);
+        } else {
+          els.donutCenterV.textContent = fmt(t.total);
+          els.donutCenterK.textContent = "Net worth";
+        }
+        Array.prototype.forEach.call(document.querySelectorAll("[data-donut]"), function (node) {
+          node.addEventListener("mouseenter", function () { donutHoverId = node.getAttribute("data-donut"); renderDonut(); });
+          node.addEventListener("mouseleave", function () { donutHoverId = null; renderDonut(); });
+          node.addEventListener("click", function () {
+            var id = node.getAttribute("data-donut");
+            donutHoverId = (donutHoverId === id) ? null : id;
+            renderDonut();
+          });
+        });
+      }
+
+      /* ---------------- Shared chart helpers ---------------- */
+      function niceCeil(v) {
+        if (v <= 0) return 1;
+        var pow = Math.pow(10, Math.floor(Math.log10(v)));
+        var n = v / pow;
+        var steps = [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+        for (var i = 0; i < steps.length; i++) if (n <= steps[i]) return steps[i] * pow;
+        return 10 * pow;
+      }
+      function niceFloor(v) {
+        if (v >= 0) return 0;
+        return -niceCeil(-v);
+      }
+      function placeTip(wrap, tip, evt) {
+        var rect = wrap.getBoundingClientRect();
+        var x = (evt.clientX - rect.left) + 14, y = (evt.clientY - rect.top) - 10;
+        var tw = tip.offsetWidth, th = tip.offsetHeight;
+        if (x + tw > rect.width - 4) x = (evt.clientX - rect.left) - tw - 12;
+        if (y + th > rect.height) y = rect.height - th - 4;
+        if (y < 0) y = 4;
+        tip.style.left = x + "px";
+        tip.style.top = y + "px";
+      }
+
+      /* ---------------- Road to FI chart ---------------- */
+      var roadGeom = null;
+      function renderRoad() {
+        var t = totals();
+        var goal = state.settings.goal;
+        els.roadTitle.textContent = goal > 0 ? "Road to " + fmt(goal) : "Road to FI";
+        var snaps = sortedSnapshots();
+        if (!state.entries.length || t.total <= 0) {
+          els.roadChart.innerHTML = "";
+          els.roadEmpty.style.display = "block";
+          roadGeom = null;
+          return;
+        }
+        els.roadEmpty.style.display = "none";
+        var cp = currentPlanProjection();
+        var proj = cp.proj, baseDate = cp.baseDate;
+        var chartStart = snaps.length ? (parseISO(snaps[0].date) || baseDate) : baseDate;
+        var startOffset = monthsFloat(chartStart, baseDate); // where projection begins, in months from chartStart
+        var endM = startOffset + (proj.fiMonth !== null ? proj.fiMonth : proj.points.length - 1);
+        if (endM - 0 < 12) endM = 12;
+        var W = 720, H = 300, PL = 62, PR = 14, PT = 14, PB = 30;
+        var iw = W - PL - PR, ih = H - PT - PB;
+        var yMaxRaw = Math.max(goal, proj.points[proj.points.length - 1].total);
+        snaps.forEach(function (s) { yMaxRaw = Math.max(yMaxRaw, s.total); });
+        var yMax = niceCeil(yMaxRaw * 1.04);
+        function X(m) { return PL + (m / endM) * iw; }
+        function Y(v) { return PT + ih - (v / yMax) * ih; }
+
+        var s = "";
+        // gridlines + y labels (5)
+        for (var i = 0; i <= 4; i++) {
+          var v = yMax * i / 4, y = Y(v);
+          s += '<line class="gridline" x1="' + PL + '" y1="' + y + '" x2="' + (W - PR) + '" y2="' + y + '"/>';
+          s += '<text x="' + (PL - 8) + '" y="' + (y + 4) + '" text-anchor="end">' + esc(fmtCompact(v)) + '</text>';
+        }
+        // goal line
+        if (goal > 0) {
+          s += '<line x1="' + PL + '" y1="' + Y(goal) + '" x2="' + (W - PR) + '" y2="' + Y(goal) + '" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="6 4"/>';
+          s += '<text x="' + (W - PR) + '" y="' + (Y(goal) - 6) + '" text-anchor="end" fill="var(--gold)" font-size="11.5" font-weight="600">FI goal ' + esc(fmtCompact(goal)) + '</text>';
+        }
+        // x labels: ~6 ticks
+        var tickEvery = Math.max(6, Math.round(endM / 6 / 6) * 6);
+        for (var mTick = 0; mTick <= endM; mTick += tickEvery) {
+          var dTick = addMonths(chartStart, Math.round(mTick));
+          var xTick = X(mTick);
+          var anchor = xTick > W - 64 ? "end" : xTick < PL + 34 ? "start" : "middle";
+          s += '<text x="' + xTick + '" y="' + (H - 8) + '" text-anchor="' + anchor + '">' + esc(monthName(dTick)) + '</text>';
+        }
+        // stacked areas from projection start
+        var pts = proj.points;
+        function ptAt(p) { return [X(startOffset + p.m), p]; }
+        var invLine = "", totLine = "";
+        pts.forEach(function (p, idx) {
+          var x = X(startOffset + p.m);
+          invLine += (idx ? "L" : "M") + x.toFixed(1) + " " + Y(p.invested).toFixed(1) + " ";
+          totLine += (idx ? "L" : "M") + x.toFixed(1) + " " + Y(p.total).toFixed(1) + " ";
+        });
+        var revInv = "";
+        for (var ri = pts.length - 1; ri >= 0; ri--) {
+          revInv += "L" + X(startOffset + pts[ri].m).toFixed(1) + " " + Y(pts[ri].invested).toFixed(1) + " ";
+        }
+        var baseY = Y(0);
+        var firstX = X(startOffset), lastX = X(startOffset + pts[pts.length - 1].m);
+        s += '<path d="' + invLine + 'L' + lastX.toFixed(1) + " " + baseY + " L" + firstX.toFixed(1) + " " + baseY + ' Z" fill="var(--blue)" opacity="0.75"/>';
+        s += '<path d="' + totLine + revInv + 'Z" fill="var(--green)" opacity="0.8"/>';
+        s += '<path d="' + totLine + '" fill="none" stroke="var(--green)" stroke-width="2"/>';
+        // FI marker
+        if (proj.fiMonth !== null && proj.fiMonth > 0) {
+          var fx = X(startOffset + proj.fiMonth);
+          s += '<line x1="' + fx + '" y1="' + PT + '" x2="' + fx + '" y2="' + (PT + ih) + '" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="5 4"/>';
+          s += '<text x="' + Math.min(fx + 6, W - PR - 30) + '" y="' + (PT + 12) + '" fill="var(--gold)" font-size="11.5" font-weight="700">FI</text>';
+        }
+        // today divider + actual history
+        if (snaps.length) {
+          if (startOffset > 0.05) {
+            var tx = X(startOffset);
+            s += '<line x1="' + tx + '" y1="' + PT + '" x2="' + tx + '" y2="' + (PT + ih) + '" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="3 4"/>';
+            if (tx > PL + 92) {
+              s += '<text x="' + (tx - 5) + '" y="' + (PT + ih - 6) + '" text-anchor="end" font-size="11" fill="var(--muted)">Last logged</text>';
+            } else {
+              s += '<text x="' + (tx + 5) + '" y="' + (PT + ih - 6) + '" text-anchor="start" font-size="11" fill="var(--muted)">Last logged</text>';
+            }
+          }
+          var histLine = "";
+          snaps.forEach(function (sn, idx) {
+            var d = parseISO(sn.date);
+            var mm = monthsFloat(chartStart, d);
+            histLine += (idx ? "L" : "M") + X(mm).toFixed(1) + " " + Y(sn.total).toFixed(1) + " ";
+          });
+          s += '<path d="' + histLine + '" fill="none" stroke="var(--gold-bright)" stroke-width="2.5"/>';
+          snaps.forEach(function (sn) {
+            var d = parseISO(sn.date);
+            var mm = monthsFloat(chartStart, d);
+            s += '<circle cx="' + X(mm).toFixed(1) + '" cy="' + Y(sn.total).toFixed(1) + '" r="4" fill="var(--gold-bright)" stroke="var(--surface)" stroke-width="1.5"/>';
+          });
+        }
+        s = '<svg viewBox="0 0 ' + W + " " + H + '" class="axis" role="img" aria-label="Projection chart">' + s + "</svg>";
+        els.roadChart.innerHTML = s;
+        roadGeom = {
+          W: W, PL: PL, PR: PR, endM: endM, startOffset: startOffset,
+          chartStart: chartStart, proj: proj, snaps: snaps
+        };
+      }
+      els.roadWrap.addEventListener("pointermove", function (evt) {
+        if (!roadGeom) { els.roadTip.style.opacity = "0"; return; }
+        var svg = els.roadChart.querySelector("svg");
+        if (!svg) return;
+        var rect = svg.getBoundingClientRect();
+        var xPx = (evt.clientX - rect.left) / rect.width * roadGeom.W;
+        var m = (xPx - roadGeom.PL) / (roadGeom.W - roadGeom.PL - roadGeom.PR) * roadGeom.endM;
+        if (m < 0) { els.roadTip.style.opacity = "0"; return; }
+        var g = roadGeom, html = "";
+        // nearest snapshot?
+        var bestSnap = null, bestDist = 1e9;
+        g.snaps.forEach(function (sn) {
+          var mm = monthsFloat(g.chartStart, parseISO(sn.date));
+          var dist = Math.abs(mm - m);
+          if (dist < bestDist) { bestDist = dist; bestSnap = { sn: sn, mm: mm }; }
+        });
+        var projIdx = Math.round(m - g.startOffset);
+        if (bestSnap && bestDist <= 0.75 && (projIdx < 0 || bestDist <= Math.abs((g.startOffset + Math.max(projIdx, 0)) - m))) {
+          var sn = bestSnap.sn;
+          var idx = g.snaps.indexOf(sn);
+          var chg = idx > 0 ? sn.total - g.snaps[idx - 1].total : null;
+          html = '<div class="tt-title">' + esc(fullDate(sn.date)) + ' — logged</div>' +
+            '<div class="tt-row"><span>Actual net worth</span><span class="tv">' + esc(fmt(sn.total)) + '</span></div>' +
+            (chg !== null ? '<div class="tt-row"><span>Change since previous log</span><span class="tv">' + esc(fmtSigned(chg)) + '</span></div>' : "");
+        } else if (projIdx >= 0 && projIdx < g.proj.points.length) {
+          var p = g.proj.points[projIdx];
+          var d = addMonths(g.chartStart, Math.round(g.startOffset + p.m));
+          var monthlyInterest = p.inv * (state.settings.annualReturn / 100 / 12);
+          html = '<div class="tt-title">' + esc(monthName(d)) + ' — projected</div>' +
+            '<div class="tt-row"><span>Total</span><span class="tv">' + esc(fmt(p.total)) + '</span></div>' +
+            '<div class="tt-row"><span>You invested</span><span class="tv">' + esc(fmt(p.invested)) + '</span></div>' +
+            '<div class="tt-row"><span>Interest earned</span><span class="tv">' + esc(fmt(p.total - p.invested)) + '</span></div>' +
+            '<div class="tt-row"><span>Monthly interest income</span><span class="tv">' + esc(fmt(monthlyInterest)) + '</span></div>' +
+            '<div class="tt-row"><span>Yearly interest income</span><span class="tv">' + esc(fmt(monthlyInterest * 12)) + '</span></div>';
+        } else {
+          els.roadTip.style.opacity = "0";
+          return;
+        }
+        els.roadTip.innerHTML = html;
+        els.roadTip.style.opacity = "1";
+        placeTip(els.roadWrap, els.roadTip, evt);
+      });
+      els.roadWrap.addEventListener("pointerleave", function () { els.roadTip.style.opacity = "0"; });
+
+      /* ---------------- Scenarios ---------------- */
+      function syncScenarioFromPlan() {
+        els.scMonthly.value = Math.min(10000, state.settings.monthly);
+        els.scReturn.value = Math.min(12, state.settings.annualReturn);
+        els.scGoal.value = Math.max(100000, Math.min(5000000, state.settings.goal));
+        renderScenario();
+      }
+      function renderScenario() {
+        var monthly = num(els.scMonthly.value), ret = num(els.scReturn.value), goal = num(els.scGoal.value);
+        els.scMonthlyV.textContent = fmt(monthly) + "/mo";
+        els.scReturnV.textContent = ret + "%";
+        els.scGoalV.textContent = fmt(goal);
+        var t = totals();
+        var p = project(t.invest, t.cash, monthly, ret, goal, 600);
+        var plan = currentPlanProjection().proj;
+        var html;
+        if (!state.entries.length) {
+          html = '<div class="sr-big">Add your accounts first</div><div class="sr-delta">The scenario starts from your current balances.</div>';
+        } else if (p.fiMonth === null) {
+          html = '<div class="sr-big">Not within 50 years</div><div class="sr-delta">Raise the contribution or return, or lower the goal.</div>';
+        } else {
+          var fiDate = addMonths(new Date(), p.fiMonth);
+          html = '<div class="sr-big">FI in ' + esc(monthName(fiDate)) + '</div><div class="sr-delta">' + esc(durationText(p.fiMonth)) + ' from now';
+          if (plan.fiMonth !== null && state.settings.goal === goal) {
+            var diff = plan.fiMonth - p.fiMonth;
+            if (diff > 0) html += " — " + diff + (diff === 1 ? " month" : " months") + " sooner than your plan";
+            else if (diff < 0) html += " — " + Math.abs(diff) + (Math.abs(diff) === 1 ? " month" : " months") + " later than your plan";
+            else html += " — same as your current plan";
+          }
+          html += ".</div>";
+        }
+        els.scenarioResult.innerHTML = html;
+      }
+      [els.scMonthly, els.scReturn, els.scGoal].forEach(function (inp) {
+        inp.addEventListener("input", function () { scenarioTouched = true; renderScenario(); });
+      });
+
+      /* ---------------- Entries ---------------- */
+      function renderEntries() {
+        renderGroupList("invest", els.investList);
+        renderGroupList("cash", els.cashList);
+        var t = totals();
+        els.investTotal.textContent = fmt(t.invest);
+        els.cashTotal.textContent = fmt(t.cash);
+      }
+      function renderGroupList(group, container) {
+        var list = state.entries.filter(function (e) { return e.group === group; });
+        if (!list.length) {
+          container.innerHTML = '<div class="empty-note" style="padding:16px 8px">No entries yet — add your first one below.</div>';
+          return;
+        }
+        var html = "";
+        list.forEach(function (e) {
+          html += '<div class="entry-row" data-entry="' + e.id + '">' +
+            '<span class="dot" style="background:' + e.color + '"></span>' +
+            '<input class="nm-input" type="text" value="' + esc(e.name) + '" maxlength="60" aria-label="Entry name" data-act="name" />' +
+            '<input class="bal-input" type="number" value="' + e.balance + '" min="0" step="any" aria-label="Balance" data-act="balance" />' +
+            '<button class="del" type="button" data-act="del" aria-label="Delete ' + esc(e.name) + '" title="Delete">×</button></div>';
+        });
+        container.innerHTML = html;
+        Array.prototype.forEach.call(container.querySelectorAll("[data-entry]"), function (row) {
+          var id = row.getAttribute("data-entry");
+          row.querySelector('[data-act="name"]').addEventListener("change", function (ev) {
+            var e = entryById(id); if (!e) return;
+            e.name = ev.target.value.trim() || e.name;
+            state.demo = false; save(); renderAll(false);
+          });
+          row.querySelector('[data-act="balance"]').addEventListener("change", function (ev) {
+            var e = entryById(id); if (!e) return;
+            e.balance = Math.max(0, num(ev.target.value));
+            state.demo = false; save(); renderAll(false);
+          });
+          row.querySelector('[data-act="del"]').addEventListener("click", function () {
+            var e = entryById(id); if (!e) return;
+            confirmModal("Delete “" + e.name + "”?", "This removes the entry and its current balance. Balances already saved in your log stay as they were.", "Delete", function () {
+              state.entries = state.entries.filter(function (x) { return x.id !== id; });
+              delete histVisible[id];
+              state.demo = false; save(); renderAll(false);
+            });
+          });
+        });
+      }
+      function bindAddForm(formId, nameId, amtId, group) {
+        $(formId).addEventListener("submit", function (evt) {
+          evt.preventDefault();
+          var nameEl = $(nameId), amtEl = $(amtId);
+          var name = nameEl.value.trim();
+          if (!name) { nameEl.focus(); return; }
+          state.entries.push({ id: uid(), name: name, group: group, balance: Math.max(0, num(amtEl.value)), color: nextColor() });
+          nameEl.value = ""; amtEl.value = "";
+          state.demo = false; save(); renderAll(false);
+        });
+      }
+      bindAddForm("investForm", "investName", "investAmt", "invest");
+      bindAddForm("cashForm", "cashName", "cashAmt", "cash");
+
+      /* ---------------- Balance history chart ---------------- */
+      function histSeries() {
+        var snaps = sortedSnapshots();
+        var series = [{ key: "total", name: "Total", color: "var(--gold-bright)", width: 3 }];
+        var seen = {};
+        snaps.forEach(function (sn) {
+          (sn.entries || []).forEach(function (se) {
+            if (!seen[se.id]) {
+              seen[se.id] = true;
+              var live = entryById(se.id);
+              series.push({ key: se.id, name: live ? live.name : se.name, color: live ? live.color : "#999999", width: 2 });
+            }
+          });
+        });
+        state.entries.forEach(function (e) {
+          if (!seen[e.id]) { seen[e.id] = true; series.push({ key: e.id, name: e.name, color: e.color, width: 2 }); }
+        });
+        return series;
+      }
+      function seriesValue(sn, key) {
+        if (key === "total") return sn.total;
+        var found = null;
+        (sn.entries || []).forEach(function (se) { if (se.id === key) found = se.balance; });
+        return found;
+      }
+      var histGeom = null;
+      function renderHistory() {
+        var snaps = sortedSnapshots();
+        var series = histSeries();
+        // chips
+        var chips = "";
+        series.forEach(function (sr) {
+          var on = !!histVisible[sr.key];
+          chips += '<button type="button" class="chip' + (on ? " on" : "") + '" data-chip="' + sr.key + '"><span class="dot" style="background:' + sr.color + '"></span>' + esc(sr.name) + "</button>";
+        });
+        els.histChips.innerHTML = chips;
+        Array.prototype.forEach.call(els.histChips.querySelectorAll("[data-chip]"), function (chip) {
+          chip.addEventListener("click", function () {
+            var k = chip.getAttribute("data-chip");
+            histVisible[k] = !histVisible[k];
+            renderHistory();
+          });
+        });
+        if (!snaps.length) {
+          els.histChart.innerHTML = "";
+          els.histEmpty.style.display = "block";
+          els.histEmpty.textContent = "No balances logged yet. Log your first balance in the Balance log and your history starts here.";
+          histGeom = null;
+          return;
+        }
+        var visible = series.filter(function (sr) { return histVisible[sr.key]; });
+        if (!visible.length) {
+          els.histChart.innerHTML = "";
+          els.histEmpty.style.display = "block";
+          els.histEmpty.textContent = "Every line is off — tap a chip above to show one.";
+          histGeom = null;
+          return;
+        }
+        els.histEmpty.style.display = "none";
+        var W = 720, H = 280, PL = 62, PR = 14, PT = 12, PB = 30;
+        var iw = W - PL - PR, ih = H - PT - PB;
+        var d0 = parseISO(snaps[0].date), dN = parseISO(snaps[snaps.length - 1].date);
+        var spanM = Math.max(monthsFloat(d0, dN), 0.001);
+        var vMin = Infinity, vMax = -Infinity;
+        visible.forEach(function (sr) {
+          snaps.forEach(function (sn) {
+            var v = seriesValue(sn, sr.key);
+            if (v !== null) { vMin = Math.min(vMin, v); vMax = Math.max(vMax, v); }
+          });
+        });
+        if (!isFinite(vMin)) { vMin = 0; vMax = 1; }
+        if (vMax - vMin < 1) { vMax = vMin + 1; }
+        // Zoom to the logged range so real movement is visible — only pin the
+        // floor to zero when the values themselves start near zero.
+        var step = niceCeil((vMax - vMin) / 4);
+        var yLo = Math.floor((vMin - step * 0.4) / step) * step;
+        if (vMin >= 0 && vMin <= step) yLo = 0;
+        if (yLo < 0 && vMin >= 0) yLo = 0;
+        var yHi = Math.ceil((vMax + step * 0.4) / step) * step;
+        function X(d) { return PL + (spanM === 0 ? iw / 2 : (monthsFloat(d0, d) / spanM) * iw); }
+        function Y(v) { return PT + ih - ((v - yLo) / (yHi - yLo)) * ih; }
+        var s = "";
+        for (var i = 0; i <= 4; i++) {
+          var v = yLo + (yHi - yLo) * i / 4, y = Y(v);
+          s += '<line class="gridline" x1="' + PL + '" y1="' + y + '" x2="' + (W - PR) + '" y2="' + y + '"/>';
+          s += '<text x="' + (PL - 8) + '" y="' + (y + 4) + '" text-anchor="end">' + esc(fmtCompact(v)) + "</text>";
+        }
+        var labelIdx = {};
+        snaps.forEach(function (sn, idx) {
+          if (snaps.length <= 8 || idx % Math.ceil(snaps.length / 6) === 0 || idx === snaps.length - 1) labelIdx[idx] = true;
+        });
+        snaps.forEach(function (sn, idx) {
+          if (!labelIdx[idx]) return;
+          var lx = X(parseISO(sn.date));
+          var lAnchor = lx > W - 70 ? "end" : lx < PL + 40 ? "start" : "middle";
+          s += '<text x="' + lx + '" y="' + (H - 8) + '" text-anchor="' + lAnchor + '">' + esc(fullDate(sn.date)) + "</text>";
+        });
+        visible.forEach(function (sr) {
+          var line = "", started = false;
+          snaps.forEach(function (sn) {
+            var v = seriesValue(sn, sr.key);
+            if (v === null) return;
+            line += (started ? "L" : "M") + X(parseISO(sn.date)).toFixed(1) + " " + Y(v).toFixed(1) + " ";
+            started = true;
+          });
+          if (line) s += '<path d="' + line + '" fill="none" stroke="' + sr.color + '" stroke-width="' + sr.width + '"/>';
+          snaps.forEach(function (sn) {
+            var v = seriesValue(sn, sr.key);
+            if (v === null) return;
+            s += '<circle cx="' + X(parseISO(sn.date)).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="' + (sr.key === "total" ? 4 : 3) + '" fill="' + sr.color + '" stroke="var(--surface)" stroke-width="1.2"/>';
+          });
+        });
+        els.histChart.innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" class="axis" role="img" aria-label="Balance history chart">' + s + "</svg>";
+        histGeom = { W: W, PL: PL, PR: PR, d0: d0, spanM: spanM, snaps: snaps, visible: visible, series: series };
+      }
+      els.histWrap.addEventListener("pointermove", function (evt) {
+        if (!histGeom) { els.histTip.style.opacity = "0"; return; }
+        var svg = els.histChart.querySelector("svg");
+        if (!svg) return;
+        var rect = svg.getBoundingClientRect();
+        var xPx = (evt.clientX - rect.left) / rect.width * histGeom.W;
+        var m = (xPx - histGeom.PL) / (histGeom.W - histGeom.PL - histGeom.PR) * histGeom.spanM;
+        var best = null, bestDist = 1e9;
+        histGeom.snaps.forEach(function (sn, idx) {
+          var mm = monthsFloat(histGeom.d0, parseISO(sn.date));
+          var dist = Math.abs(mm - m);
+          if (dist < bestDist) { bestDist = dist; best = { sn: sn, idx: idx }; }
+        });
+        if (!best) { els.histTip.style.opacity = "0"; return; }
+        var sn = best.sn, prev = best.idx > 0 ? histGeom.snaps[best.idx - 1] : null;
+        var html = '<div class="tt-title">' + esc(fullDate(sn.date)) + "</div>";
+        histGeom.visible.forEach(function (sr) {
+          var v = seriesValue(sn, sr.key);
+          if (v === null) return;
+          var pv = prev ? seriesValue(prev, sr.key) : null;
+          var chg = (pv !== null && pv !== undefined) ? v - pv : null;
+          html += '<div class="tt-row"><span>' + esc(sr.name) + '</span><span class="tv">' + esc(fmt(v)) + (chg !== null && chg !== 0 ? " (" + esc(fmtSigned(chg)) + ")" : "") + "</span></div>";
+        });
+        els.histTip.innerHTML = html;
+        els.histTip.style.opacity = "1";
+        placeTip(els.histWrap, els.histTip, evt);
+      });
+      els.histWrap.addEventListener("pointerleave", function () { els.histTip.style.opacity = "0"; });
+
+      /* ---------------- Balance log ---------------- */
+      function renderLog() {
+        var snaps = sortedSnapshots();
+        if (!snaps.length) {
+          els.logList.innerHTML = '<div class="empty-note" style="padding:14px 8px">No log entries yet.</div>';
+        } else {
+          var html = "";
+          for (var i = snaps.length - 1; i >= 0; i--) {
+            var sn = snaps[i];
+            var prev = i > 0 ? snaps[i - 1] : null;
+            var chg = prev ? sn.total - prev.total : null;
+            html += '<div class="log-row"><span class="dt">' + esc(fullDate(sn.date)) + '</span>' +
+              '<span class="tt">' + esc(fmt(sn.total)) + "</span>" +
+              (chg !== null ? '<span class="chg ' + (chg > 0 ? "up" : chg < 0 ? "down" : "") + '">' + esc(fmtSigned(chg)) + "</span>" : '<span class="chg">first log</span>') +
+              '<button class="del" type="button" data-logdel="' + esc(sn.date) + '" aria-label="Delete log entry for ' + esc(sn.date) + '" title="Delete log entry">×</button></div>';
+          }
+          els.logList.innerHTML = html;
+          Array.prototype.forEach.call(els.logList.querySelectorAll("[data-logdel]"), function (btn) {
+            btn.addEventListener("click", function () {
+              var date = btn.getAttribute("data-logdel");
+              confirmModal("Delete this log entry?", "The snapshot from " + fullDate(date) + " will be removed from your history. Current entry balances don't change.", "Delete", function () {
+                state.snapshots = state.snapshots.filter(function (x) { return x.date !== date; });
+                save(); renderAll(false);
+              });
+            });
+          });
+        }
+        // log form fields
+        if (!state.entries.length) {
+          els.logFields.innerHTML = '<div class="empty-note" style="padding:10px 8px">Add an investment or cash entry first — then you can log its balance here.</div>';
+          els.logSave.disabled = true;
+        } else {
+          els.logSave.disabled = false;
+          var lf = "";
+          state.entries.forEach(function (e) {
+            lf += '<div class="log-field"><span class="dot" style="background:' + e.color + '"></span><span class="nm">' + esc(e.name) + '</span>' +
+              '<input type="number" min="0" step="any" value="' + e.balance + '" data-logfield="' + e.id + '" aria-label="Balance for ' + esc(e.name) + '" /></div>';
+          });
+          els.logFields.innerHTML = lf;
+        }
+        if (!els.logDate.value) els.logDate.value = todayISO();
+      }
+      els.logSave.addEventListener("click", function () {
+        var date = els.logDate.value || todayISO();
+        var snapEntries = [];
+        var total = 0;
+        Array.prototype.forEach.call(els.logFields.querySelectorAll("[data-logfield]"), function (inp) {
+          var e = entryById(inp.getAttribute("data-logfield"));
+          if (!e) return;
+          var v = Math.max(0, num(inp.value));
+          snapEntries.push({ id: e.id, name: e.name, group: e.group, balance: v });
+          total += v;
+        });
+        if (!snapEntries.length) return;
+        var existing = null;
+        state.snapshots.forEach(function (x) { if (x.date === date) existing = x; });
+        function applyLog() {
+          if (existing) {
+            existing.entries = snapEntries; existing.total = total;
+          } else {
+            state.snapshots.push({ date: date, total: total, entries: snapEntries });
+          }
+          // if this is the latest snapshot, it also becomes the current balances
+          var snaps = sortedSnapshots();
+          if (snaps.length && snaps[snaps.length - 1].date === date) {
+            snapEntries.forEach(function (se) {
+              var e = entryById(se.id);
+              if (e) e.balance = se.balance;
+            });
+          }
+          save(); renderAll(false);
+          els.logMsg.textContent = "Logged " + fmt(total) + " for " + fullDate(date) + ".";
+          els.logMsg.className = "msg ok";
+        }
+        if (existing) {
+          confirmModal("Overwrite this log entry?", "You already logged balances for " + fullDate(date) + ". Saving replaces that snapshot.", "Overwrite", applyLog);
+        } else {
+          applyLog();
+        }
+      });
+
+      /* ---------------- Plan settings ---------------- */
+      function syncSettingsInputs() {
+        els.setGoal.value = state.settings.goal;
+        els.setMonthly.value = state.settings.monthly;
+        els.setReturn.value = state.settings.annualReturn;
+        els.setCurrency.value = state.settings.currency || "USD";
+      }
+      function renderSettingsFoot() {
+        els.settingsFoot.textContent = "Projection: investments grow at " + state.settings.annualReturn + "%/yr, compounded monthly, plus " +
+          fmt(state.settings.monthly) + " contributed each month. Cash & equivalents stay flat.";
+      }
+      function bindSetting(input, key, isFloat) {
+        input.addEventListener("change", function () {
+          var v = num(input.value);
+          state.settings[key] = isFloat ? v : Math.max(0, v);
+          save(); renderAll(false);
+        });
+      }
+      bindSetting(els.setGoal, "goal", false);
+      bindSetting(els.setMonthly, "monthly", false);
+      bindSetting(els.setReturn, "annualReturn", true);
+      els.setCurrency.addEventListener("change", function () {
+        state.settings.currency = els.setCurrency.value;
+        save(); renderAll(false);
+      });
+
+      /* ---------------- Privacy ---------------- */
+      els.privacyBtn.addEventListener("click", function () {
+        privacy = !privacy;
+        els.privacyBtn.setAttribute("aria-pressed", String(privacy));
+        els.privacyLabel.textContent = privacy ? "Show amounts" : "Hide amounts";
+        renderAll(false);
+      });
+
+      /* ---------------- Export / import / demo / erase ---------------- */
+      function setDataMsg(text, ok) {
+        els.dataMsg.textContent = text || "";
+        els.dataMsg.className = "msg " + (text ? (ok ? "ok" : "err") : "");
+      }
+      $("exportBtn").addEventListener("click", function () {
+        var payload = JSON.stringify({ app: "fire-tracker-static", version: 1, exportedAt: new Date().toISOString(), data: state }, null, 2);
+        var blob = new Blob([payload], { type: "application/json" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "fire-tracker-backup-" + todayISO() + ".json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+        setDataMsg("Backup downloaded — keep it somewhere safe.", true);
+      });
+      $("importBtn").addEventListener("click", function () { $("importFile").click(); });
+      $("importFile").addEventListener("change", function (evt) {
+        var file = evt.target.files && evt.target.files[0];
+        evt.target.value = "";
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            var parsed = JSON.parse(String(reader.result));
+            var d = parsed && parsed.data ? parsed.data : parsed;
+            if (!d || !d.settings || !Array.isArray(d.entries) || !Array.isArray(d.snapshots)) throw new Error("shape");
+            // light validation / sanitation
+            d.entries = d.entries.filter(function (e) { return e && e.name; }).map(function (e, i) {
+              return { id: String(e.id || uid()), name: String(e.name), group: e.group === "cash" ? "cash" : "invest", balance: Math.max(0, num(e.balance)), color: e.color || PALETTE[i % PALETTE.length] };
+            });
+            d.snapshots = d.snapshots.filter(function (x) { return x && x.date; }).map(function (x) {
+              return { date: String(x.date), total: num(x.total), entries: Array.isArray(x.entries) ? x.entries : [] };
+            });
+            d.settings = {
+              goal: Math.max(0, num(d.settings.goal)), monthly: Math.max(0, num(d.settings.monthly)),
+              annualReturn: num(d.settings.annualReturn), currency: String(d.settings.currency || "USD")
+            };
+            d.demo = false;
+            confirmModal("Import this backup?", "It replaces everything currently in the tracker — " + d.entries.length + " entries and " + d.snapshots.length + " log snapshots.", "Import", function () {
+              state = d;
+              histVisible = { total: true };
+              save(); syncSettingsInputs(); syncScenarioFromPlan(); renderAll(false);
+              setDataMsg("Backup imported.", true);
+            });
+          } catch (e) {
+            setDataMsg("That file doesn't look like a FIRE Tracker backup.", false);
+          }
+        };
+        reader.readAsText(file);
+      });
+      function demoData() {
+        // Matches the demo figures the owner settled on: ~$300 starting
+        // balance and a $5,000,000 goal, so the compounding story shows.
+        var inv = [
+          { name: "TFSA", balance: 120 }, { name: "RRSP", balance: 100 }, { name: "Non-registered", balance: 50 }
+        ];
+        var cash = [
+          { name: "Chequing", balance: 12 }, { name: "High-interest savings", balance: 10 }, { name: "Cash", balance: 8 }
+        ];
+        var entries = [];
+        inv.forEach(function (x, i) { entries.push({ id: "demo-inv-" + i, name: x.name, group: "invest", balance: x.balance, color: PALETTE[i] }); });
+        cash.forEach(function (x, i) { entries.push({ id: "demo-cash-" + i, name: x.name, group: "cash", balance: x.balance, color: PALETTE[3 + i] }); });
+        // 7 monthly snapshots ending today, building up to the $300 start
+        var snaps = [];
+        var growth = [0.42, 0.55, 0.66, 0.76, 0.85, 0.93, 1.0];
+        var cashDrift = [0.5, 0.6, 0.7, 0.8, 0.87, 0.94, 1.0];
+        var now = new Date();
+        for (var k = 6; k >= 0; k--) {
+          var d = new Date(now.getFullYear(), now.getMonth() - k, 1);
+          var se = [], total = 0;
+          entries.forEach(function (e) {
+            var f = e.group === "invest" ? growth[6 - k] : cashDrift[6 - k];
+            var v = Math.round(e.balance * f);
+            se.push({ id: e.id, name: e.name, group: e.group, balance: v });
+            total += v;
+          });
+          snaps.push({ date: toISO(d), total: total, entries: se });
+        }
+        return {
+          settings: { goal: 5000000, monthly: 3500, annualReturn: 7, currency: "USD" },
+          entries: entries, snapshots: snaps, demo: true
+        };
+      }
+      $("demoBtn").addEventListener("click", function () {
+        function load() {
+          state = demoData();
+          histVisible = { total: true };
+          save(); syncSettingsInputs(); syncScenarioFromPlan(); renderAll(false);
+          setDataMsg("Demo data loaded — edit or erase it any time.", true);
+        }
+        if (state.entries.length || state.snapshots.length) {
+          confirmModal("Replace your data with demo data?", "Your current entries and log will be replaced by clearly-marked sample numbers. Export a backup first if you want to keep them.", "Load demo data", load);
+        } else load();
+      });
+      $("eraseBtn").addEventListener("click", function () {
+        confirmModal("Erase everything?", "All entries, log snapshots, and plan settings stored in this browser will be deleted. This can't be undone — export a backup first if you might want them back.", "Erase everything", function () {
+          state = defaultState();
+          histVisible = { total: true };
+          try { localStorage.removeItem(LS_KEY); } catch (e) {}
+          save(); syncSettingsInputs(); syncScenarioFromPlan(); renderAll(false);
+          setDataMsg("Everything erased. Fresh start.", true);
+        });
+      });
+
+      /* ---------------- Render all ---------------- */
+      function renderAll(syncScenario) {
+        els.demoBadge.classList.toggle("on", !!state.demo);
+        renderSummary();
+        renderDonut();
+        renderRoad();
+        renderEntries();
+        renderHistory();
+        renderLog();
+        renderSettingsFoot();
+        if (syncScenario) syncScenarioFromPlan(); else if (!scenarioTouched) syncScenarioFromPlan(); else renderScenario();
+      }
+
+      els.logDate.value = todayISO();
+      syncSettingsInputs();
+      syncScenarioFromPlan();
+      renderAll(false);
+    </script>
+  </body>
+</html>
+
